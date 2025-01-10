@@ -64,10 +64,12 @@ DWORD WINAPI InstanceThread(HANDLE hPipe) {
 
 
 }
+ 
 
 DWORD WINAPI _init(void* data)
 {
-
+	
+	
 	while (true)
 	{
 		HANDLE clientHandle = CreateNamedPipeG("\\\\.\\pipe\\my_pipe_server", BUFFER_SIZE);
@@ -83,7 +85,7 @@ DWORD WINAPI _init(void* data)
 
 			CreateThread(NULL, NULL, (PTHREAD_START_ROUTINE)InstanceThread, clientHandle, NULL, NULL);
 		}
-		Sleep(100);
+		Sleep(1000);
 	}
 
 
