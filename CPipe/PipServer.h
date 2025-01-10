@@ -111,8 +111,7 @@ public:
 					};
 				std::thread(functor , clientHandle , MessageReceived).detach();
 
-				//std::thread(&PipServer::InstanceThread , this);
-				//CreateThread(NULL, NULL, (PTHREAD_START_ROUTINE)(DWORD)InstanceThread, clientHandle, NULL, NULL);
+			 
 			}
 			Sleep(SLEEP);
 		}
