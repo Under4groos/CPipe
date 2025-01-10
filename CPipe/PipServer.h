@@ -8,6 +8,15 @@
 typedef void (*EventMessageErrors)(std::string msg);
 typedef void (*EventMessageReceived)(HANDLE hwnd, std::string msg);
 typedef void (*EventMessageConnected)(HANDLE hwnd);
+
+struct EventsMessage
+{
+	EventMessageErrors MessageErrors;
+	EventMessageReceived MessageReceived;
+	EventMessageConnected MessageConnected;
+
+};
+
 class PipServer
 {
 public:
@@ -22,7 +31,7 @@ public:
 
 	PipServer() {
 
-		
+
 	}
 
 	void Init() {
@@ -31,8 +40,8 @@ public:
 
 
 
-	 
-	void InstanceThread(HANDLE hPipe , EventMessageReceived messageReceived) {
+
+	void InstanceThread(HANDLE hPipe, EventsMessage events) {
 		if (hPipe == NULL)
 			return;
 		HANDLE hHeap = GetProcessHeap();
@@ -51,8 +60,8 @@ public:
 			if (!fSuccess || cbBytesRead == 0) {
 				if (GetLastError() == ERROR_BROKEN_PIPE)
 				{
-
-					MessageErrors("InstanceThread: client disconnected.");
+					if (events.MessageErrors)
+						events.MessageErrors("InstanceThread: client disconnected.");
 				}
 				else
 				{
@@ -67,8 +76,8 @@ public:
 
 
 
-			if (messageReceived)
-				messageReceived(hPipe, pchRequest);
+			if (events.MessageReceived)
+				events.MessageReceived(hPipe, pchRequest);
 
 			pchReply = pchRequest;
 			fSuccess = WriteFile(
@@ -80,7 +89,7 @@ public:
 
 			if (!fSuccess || cbReplyBytes != cbWritten)
 			{
-				 
+
 				//cout << "InstanceThread WriteFile failed, GLE=%d" << GetLastError() << endl;
 				continue;
 			}
@@ -103,15 +112,17 @@ public:
 				if (MessageConnected)
 					MessageConnected(clientHandle);
 
-				auto functor =
-					[this](HANDLE clientHandle , EventMessageReceived messageReceived) ->void
-					{
-						InstanceThread(clientHandle , messageReceived);
-					
-					};
-				std::thread(functor , clientHandle , MessageReceived).detach();
+				EventsMessage events{ MessageErrors  , MessageReceived , MessageConnected };
 
-			 
+				auto functor =
+					[this](HANDLE clientHandle, EventsMessage events) ->void
+					{
+						InstanceThread(clientHandle, events);
+
+					};
+				std::thread(functor, clientHandle, events).detach();
+
+
 			}
 			Sleep(SLEEP);
 		}
